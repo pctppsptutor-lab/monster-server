@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Quản trị Ngân hàng Câu hỏi</title>
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+<header class="topbar">
+ <div class="brand-group">
+   <div class="logo-badge">⭐</div>
+   <div>
+     <h1 class="top-title">Quản trị Ngân hàng Câu hỏi</h1>
+     <p class="top-sub">Dành cho Giáo viên & Chủ nội dung · Edupia Classroom</p>
+   </div>
+ </div>
+ <div id="who" class="who" hidden>
+   <span class="user-pill">👤 <span id="whoName"></span></span>
+   <button id="logout" type="button" class="btn ghost small">Đăng xuất</button>
+ </div>
+</header>
+
+<main class="container">
+ <p id="msg" class="msg" role="status" aria-live="polite"></p>
+
+ <!-- 1. Login View -->
+ <section id="loginView" hidden aria-labelledby="loginTitle" class="auth-wrap">
+  <div class="card auth-card">
+   <h2 id="loginTitle">Đăng nhập Quản trị</h2>
+   <p class="hint">Đăng nhập tài khoản nội dung để tạo và chỉnh sửa câu hỏi.</p>
+   <form id="loginForm" method="post" novalidate class="stack">
+    <label for="loginUser">Tên đăng nhập</label>
+    <input id="loginUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="32" required placeholder="admin">
+    <label for="loginPass">Mật khẩu</label>
+    <input id="loginPass" name="password" type="password" autocomplete="current-password" maxlength="256" required placeholder="Nhập mật khẩu">
+    <button type="submit" id="loginBtn" class="btn primary big">Đăng nhập</button>
+   </form>
+   <p class="hint foot-note">Cần cấp lại mật khẩu? Sử dụng lệnh CLI <code>node admin-cli.js reset &lt;tên&gt;</code> trên máy chủ.</p>
+  </div>
+ </section>
+
+ <!-- 2. Main Dashboard View -->
+ <section id="mainView" hidden class="dash-wrap">
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+   <button type="button" id="tabEditor" class="tab-btn active">✏️ Soạn thảo Trực quan</button>
+   <button type="button" id="tabSources" class="tab-btn">🔗 Nguồn Link / Google Docs</button>
+   <button type="button" id="tabAudit" class="tab-btn">📜 Nhật ký Hệ thống</button>
+   <button type="button" id="tabPassword" class="tab-btn">🔒 Đổi Mật khẩu</button>
+  </nav>
+
+  <!-- TAB A: Visual Question Editor -->
+  <div id="panelEditor" class="tab-panel">
+   <div class="card control-bar">
+    <div class="bar-left">
+     <label for="editorGameSelect" class="inline-lbl">Game đang chọn:</label>
+     <select id="editorGameSelect" class="select-lg">
+      <option value="monster-gacha">Quái Thú Gacha (monster-gacha)</option>
+     </select>
+     <input id="editorBankTitle" class="input-lg" placeholder="Tiêu đề bộ câu hỏi..." value="Monster Gacha - 8 Rounds English Adventure">
+    </div>
+    <div class="bar-right">
+     <button type="button" id="btnNewQ" class="btn secondary">➕ Thêm câu hỏi</button>
+     <button type="button" id="btnSaveDraftDirect" class="btn secondary">💾 Lưu bản nháp</button>
+     <button type="button" id="btnPublishDirect" class="btn primary">🚀 Lưu & Xuất bản ngay</button>
+    </div>
+   </div>
+
+   <!-- Editor 2-Column Grid -->
+   <div class="editor-grid">
+    <!-- Left Column: Questions List -->
+    <div class="q-list-panel card">
+     <div class="panel-header">
+      <h3 class="panel-title">Danh sách Câu hỏi (<span id="qCountBadge">0</span>)</h3>
+      <span class="badge info">Kéo hoặc chọn để sửa</span>
+     </div>
+     <div id="qItemsList" class="q-items-scroll">
+      <!-- Dynamic list of questions -->
+     </div>
+    </div>
+
+    <!-- Right Column: Detail Form -->
+    <div class="q-detail-panel card">
+     <div class="panel-header">
+      <h3 class="panel-title" id="editingQTitle">Chỉnh sửa Câu hỏi #1</h3>
+      <div class="q-actions-quick">
+       <button type="button" id="btnDuplicateQ" class="btn ghost small">📋 Nhân bản</button>
+       <button type="button" id="btnDeleteQ" class="btn danger small">🗑️ Xóa câu này</button>
+      </div>
+     </div>
+
+     <form id="qEditForm" class="stack">
+      <div class="row-2">
+       <div>
+        <label for="qTypeSelect">Dạng câu hỏi</label>
+        <select id="qTypeSelect">
+         <option value="single-choice">Trắc nghiệm chọn 1 đáp án (single-choice)</option>
+         <option value="fill-blank">Điền từ vào chỗ trống (fill-blank)</option>
+        </select>
+       </div>
+       <div class="row-2">
+        <div>
+         <label for="qPoints">Điểm số</label>
+         <input id="qPoints" type="number" min="1" max="100" value="100">
+        </div>
+        <div>
+         <label for="qTimeLimit">Thời gian (giây)</label>
+         <input id="qTimeLimit" type="number" min="5" max="300" value="20">
+        </div>
+       </div>
+      </div>
+
+      <label for="qPrompt">Nội dung câu hỏi (Prompt)</label>
+      <textarea id="qPrompt" rows="3" placeholder="Nhập câu đố / câu hỏi tiếng Anh cho học sinh..."></textarea>
+
+      <!-- Options Section (For Single Choice) -->
+      <div id="optionsSection" class="stack">
+       <div class="between">
+        <label>Các lựa chọn đáp án (Tích chọn ô tròn để đặt ĐÁP ÁN ĐÚNG):</label>
+        <button type="button" id="btnAddOption" class="btn ghost small">+ Thêm lựa chọn</button>
+       </div>
+       <div id="optionsList" class="stack">
+        <!-- Render 2-6 options dynamically -->
+       </div>
+      </div>
+
+      <!-- Fill-blank section -->
+      <div id="blankSection" class="stack" hidden>
+       <label for="qAcceptedAnswers">Các đáp án đúng được chấp nhận (cách nhau dấu phẩy):</label>
+       <input id="qAcceptedAnswers" placeholder="ví dụ: kitten, cat">
+      </div>
+
+      <label for="qExplanation">Giải thích đáp án (Hiện khi học sinh trả lời xong):</label>
+      <input id="qExplanation" placeholder="Giải thích vì sao đáp án này đúng...">
+
+      <div class="form-bottom">
+       <button type="button" id="btnApplyQ" class="btn success big">Cập nhật vào danh sách</button>
+      </div>
+     </form>
+    </div>
+   </div>
+
+   <!-- Live Preview Box -->
+   <div class="card preview-card">
+    <h3>👁️ Mô phỏng giao diện hiển thị cho Học sinh</h3>
+    <div id="livePreviewBox" class="student-preview-shell">
+     <!-- Dynamic live preview -->
+    </div>
+   </div>
+  </div>
+
+  <!-- TAB B: Legacy URL / Google Docs Workflow -->
+  <div id="panelSources" class="tab-panel" hidden>
+   <section aria-labelledby="srcTitle" class="card">
+    <h2 id="srcTitle">Quản lý Nguồn liên kết (Google Docs / JSON)</h2>
+    <p class="hint">Dành cho việc liên kết trực tiếp tài liệu Google Docs hoặc link JSON ngoài.</p>
+    <div class="scroll">
+     <table>
+      <thead>
+       <tr><th>Game</th><th>Bản nháp</th><th>Đã xuất bản</th><th>Lịch sử</th></tr>
+      </thead>
+      <tbody id="list"></tbody>
+     </table>
+    </div>
+
+    <h3>Thao tác nguồn link</h3>
+    <div class="row">
+     <input id="gameId" placeholder="gameId, ví dụ monster-gacha" maxlength="40" autocapitalize="none" spellcheck="false" aria-label="gameId">
+     <input id="url" placeholder="https://docs.google.com/document/d/.../edit" maxlength="2048" aria-label="Link nguồn">
+    </div>
+    <div class="row action-buttons">
+     <button id="save" type="button" class="btn secondary">1. Lưu bản nháp</button>
+     <button id="review" type="button" class="btn secondary">2. Kiểm tra bản nháp</button>
+     <button id="publish" type="button" class="btn primary">3. Xuất bản</button>
+     <button id="preview" type="button" class="btn ghost">Xem thử link</button>
+    </div>
+    <div id="out"></div>
+   </section>
+  </div>
+
+  <!-- TAB C: Audit Log -->
+  <div id="panelAudit" class="tab-panel" hidden>
+   <section aria-labelledby="auditTitle" class="card">
+    <h2 id="auditTitle">Nhật ký Quản trị Hệ thống</h2>
+    <p class="hint">Ghi lại toàn bộ hành động đăng nhập, chỉnh sửa đề, xuất bản và đổi mật khẩu.</p>
+    <button id="loadAudit" type="button" class="btn secondary">Tải 100 sự kiện gần nhất</button>
+    <div class="scroll">
+     <table id="auditTable" hidden>
+      <thead>
+       <tr><th>Thời điểm</th><th>Sự kiện</th><th>Tài khoản</th><th>Chi tiết</th><th>IP</th></tr>
+      </thead>
+      <tbody id="auditList"></tbody>
+     </table>
+    </div>
+   </section>
+  </div>
+
+  <!-- TAB D: Change Password -->
+  <div id="panelPassword" class="tab-panel" hidden>
+   <section id="pwView" aria-labelledby="pwTitle" class="card auth-card">
+    <h2 id="pwTitle">Đổi mật khẩu tài khoản</h2>
+    <p id="pwForced" class="notice" hidden>Đây là lần đăng nhập đầu tiên bằng mật khẩu dùng một lần. Hãy đặt mật khẩu riêng để tiếp tục.</p>
+    <form id="pwForm" method="post" novalidate class="stack">
+     <input id="pwUser" name="username" autocomplete="username" hidden readonly tabindex="-1" aria-hidden="true">
+     <label for="pwCurrent">Mật khẩu hiện tại</label>
+     <input id="pwCurrent" type="password" autocomplete="current-password" maxlength="256" required>
+     <label for="pwNew">Mật khẩu mới</label>
+     <input id="pwNew" type="password" autocomplete="new-password" maxlength="256" required aria-describedby="pwRules">
+     <label for="pwNew2">Nhập lại mật khẩu mới</label>
+     <input id="pwNew2" type="password" autocomplete="new-password" maxlength="256" required>
+     <p id="pwRules" class="hint"></p>
+     <button type="submit" id="pwBtn" class="btn primary">Đổi mật khẩu</button>
+     <p class="hint">Đổi xong, mọi phiên đăng nhập khác của tài khoản này sẽ bị đăng xuất.</p>
+    </form>
+   </section>
+  </div>
+ </section>
+</main>
+
+<script src="/admin.js"></script>
+</body>
+</html>

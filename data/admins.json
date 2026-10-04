@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "users": {
+    "admin": {
+      "hash": "scrypt$32768$8$3$k3y7MNl0KHwqG1gjny26DQ==$iX/DYt2U5pnQ5uDVogsE72eHZaEKFtFxFD9HFbXTDNHE7QRNWdiy3J1VukE8C3QmtHgBbbNpDAU4ulyA3VaWRg==",
+      "mustChange": false,
+      "tempExpiresAt": null,
+      "disabled": false,
+      "tokenVersion": 3,
+      "createdAt": "2026-10-04T15:42:18.777Z",
+      "passwordChangedAt": "2026-10-04T15:45:54.566Z",
+      "scopes": [
+        "*"
+      ]
+    }
+  }
+}
