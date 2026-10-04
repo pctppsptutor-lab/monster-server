@@ -20,7 +20,13 @@ function accounts() {
 export async function authenticateTeacher(req, hello) {
   const teacherId = String(hello.teacherId || '').trim();
   const key = String(hello.teacherKey || '');
-  const expected = accounts().get(teacherId);
-  if (expected && eq(key, expected)) return { teacherId };
-  return null;
+  const accs = accounts();
+  if (accs.size > 0) {
+    if (!teacherId) return null;
+    const expected = accs.get(teacherId);
+    if (expected && eq(key, expected)) return { teacherId };
+    return null;
+  }
+  // Mặc định: Cho phép giáo viên tạo phòng ngay lập tức mà không cần mật khẩu
+  return { teacherId: teacherId || 'teacher' };
 }
