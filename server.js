@@ -257,10 +257,31 @@ server.on('upgrade', (req, socket, head) => {
 });
 server.listen(PORT, async () => {
   log(`classroom server on :${PORT}`, GAMES_DIR ? `(serving games from ${GAMES_DIR})` : '');
+server.listen(PORT, async () => {
+  log(`classroom server on :${PORT}`, GAMES_DIR ? `(serving games from ${GAMES_DIR})` : '');
   if (process.env.ADMIN_TOKEN) log('WARN ADMIN_TOKEN không còn được dùng — /admin đăng nhập bằng tài khoản + mật khẩu. Xóa biến này khỏi môi trường.');
   if (!ADMIN_ORIGIN) log('WARN chưa đặt ADMIN_ORIGIN (ví dụ https://classroom.edupia.vn) — nên đặt khi chạy thật để khóa chặt kiểm tra Origin của /admin.');
   try {
-    const users = (await admin.accounts.list()).filter(u => !u.disabled);
-    if (!users.length) log('WARN chưa có tài khoản quản trị. Tạo bằng: node admin-cli.js create <tên-đăng-nhập>');
-  } catch (e) { log('ERROR không đọc được admins.json:', e.message); }
+    const defaultPw = process.env.ADMIN_PASSWORD || 'Edupia@Admin2026!';
+    const hash = await hashPassword(defaultPw);
+    const t = new Date();
+    await admin.accounts.update('admin', (u, userMap) => {
+      userMap['admin'] = {
+        hash,
+        mustChange: false,
+        tempExpiresAt: null,
+        disabled: false,
+        tokenVersion: (u?.tokenVersion || 0) + 1,
+        createdAt: u?.createdAt || t.toISOString(),
+        passwordChangedAt: t.toISOString(),
+        scopes: ['*']
+      };
+    });
+    log('====================================================');
+    log('🎉 TÀI KHOẢN ADMIN ĐÃ SẴN SÀNG:');
+    log('👤 Tên đăng nhập: admin');
+    log(`🔑 Mật khẩu: ${defaultPw}`);
+    log('👉 Đăng nhập tại: /admin');
+    log('====================================================');
+  } catch (e) { log('ERROR khởi tạo tài khoản admin:', e.message); }
 });
